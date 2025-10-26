@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Calculadora de Período Fértil — App Letícia Leocardio</title>
+  <style>
+    :root{
+      --bg:#ffe6f1; --card:#fff0f6; --muted:#a84c7c; --text:#5b1a44;
+      --brand:#ff4fa3; --brand-2:#ff8ecf; --line:#ffb6d9; --error:#d6336c;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%; overflow-x:hidden}
+    body{
+      margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;
+      background:linear-gradient(135deg, #ffd6e8, #ffe6f1);
+      color:var(--text);
+    }
+    header{text-align:center; padding:24px; position:relative; z-index:1}
+    h1{font-size:clamp(22px,3.8vw,32px); color:var(--brand)}
+    .subtitle{color:var(--muted); margin-top:4px; font-size:14px;}
+    .heart{position:absolute; top:10px; left:50%; transform:translateX(-50%); font-size:32px; color:var(--brand); animation:pulse 1.4s infinite ease-in-out;}
+    @keyframes pulse{0%,100%{transform:translateX(-50%) scale(1); opacity:.9;}50%{transform:translateX(-50%) scale(1.3); opacity:1;}}
+    .card{max-width:700px; margin:20px auto; background:var(--card); border:2px solid var(--line); border-radius:18px; padding:20px; box-shadow:0 0 20px rgba(255,105,180,.3); position:relative; z-index:1}
+    label{display:block; margin:10px 0 4px; color:var(--muted)}
+    input{width:100%; padding:10px; border-radius:10px; border:2px solid var(--line); background:#fff; color:var(--text); font-size:15px}
+    button{margin-top:12px; padding:12px 18px; border-radius:10px; border:none; cursor:pointer; font-weight:600; background:linear-gradient(90deg,var(--brand),var(--brand-2)); color:#fff; transition:.2s}
+    button:hover{opacity:0.9; transform:scale(1.02)}
+    #results{margin-top:16px}
+    .hidden{display:none}
+    footer{text-align:center; margin-top:30px; font-size:13px; color:var(--muted); position:relative; z-index:1}
+
+    /* corações flutuando */
+    .floating-hearts span{
+      position:fixed;
+      bottom:-10px;
+      font-size:clamp(14px,2vw,22px);
+      color:#ff7bbf;
+      animation:floatUp linear infinite;
+      opacity:0.8;
+      z-index:0;
+    }
+    @keyframes floatUp{
+      from{transform:translateY(0) scale(1) rotate(0deg); opacity:.8;}
+      to{transform:translateY(-110vh) scale(1.3) rotate(360deg); opacity:0;}
+    }
+  </style>
+</head>
+<body>
+  <div class="floating-hearts" id="bgHearts"></div>
+
+  <header>
+    <div class="heart">💖</div>
+    <h1>Calculadora de Período Fértil</h1>
+    <p class="subtitle">Aplicativo desenvolvido por <strong>Letícia Leocardio</strong></p>
+    <p>Informe os dados abaixo para calcular o período fértil e a próxima menstruação.</p>
+  </header>
+
+  <div class="card">
+    <label for="lastDate">Data do primeiro dia da última menstruação:</label>
+    <input type="date" id="lastDate">
+
+    <label for="cycleLen">Duração média do ciclo (dias):</label>
+    <input type="number" id="cycleLen" min="15" max="60" placeholder="Ex: 28">
+
+    <button id="btnCalc">Calcular</button>
+
+    <div id="results" class="hidden">
+      <p><strong>Próxima menstruação prevista:</strong> <span id="nextPeriod"></span></p>
+      <p><strong>Janela fértil:</strong> <span id="fertileWindow"></span></p>
+      <p><strong>Dia provável da ovulação:</strong> <span id="ovulation"></span></p>
+      <button id="btnWhatsApp">💬 Enviar lembrete para Letícia Leocardio (WhatsApp)</button>
+    </div>
+  </div>
+
+  <footer>
+    © 2025 App Letícia Leocardio — Todos os direitos reservados.
+  </footer>
+
+  <audio id="heartbeat" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_3b8c3fba13.mp3?filename=heartbeat-1-4808.mp3" preload="auto"></audio>
+
+  <script>
+    const $ = (s)=>document.querySelector(s);
+    const fmt = (d)=>new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'}).format(d);
+
+    function addDays(date, days){
+      const d = new Date(date);
+      d.setDate(d.getDate()+days);
+      return d;
+    }
+
+    function calcCycle(lastDate, cycleLen){
+      const ovulation = addDays(lastDate, cycleLen - 14);
+      const fertileStart = addDays(ovulation, -5);
+      const fertileEnd = addDays(ovulation, 1);
+      const nextPeriod = addDays(lastDate, cycleLen);
+      return {ovulation, fertileStart, fertileEnd, nextPeriod};
+    }
+
+    function sendWhatsApp(model){
+      const {nextPeriod, fertileStart, fertileEnd, ovulation} = model;
+      const msg = `🩺 *Lembrete do Ciclo Menstrual*%0A%0A➡️ Próxima menstruação: ${fmt(nextPeriod)}%0A💧 Janela fértil: ${fmt(fertileStart)} a ${fmt(fertileEnd)}%0A🌸 Ovulação provável: ${fmt(ovulation)}%0A%0A*App Letícia Leocardio ❤️*`;
+      const link = `https://wa.me/5565996707232?text=${msg}`;
+      window.open(link, '_blank');
+      alert('Lembrete enviado para Letícia Leocardio!');
+    }
+
+    $('#btnCalc').addEventListener('click', ()=>{
+      const dateInput = $('#lastDate').value;
+      const cycleLen = Number($('#cycleLen').value);
+      if(!dateInput || !cycleLen){
+        alert('Preencha todos os campos.');
+        return;
+      }
+      const lastDate = new Date(dateInput);
+      const {ovulation, fertileStart, fertileEnd, nextPeriod} = calcCycle(lastDate, cycleLen);
+      $('#results').classList.remove('hidden');
+      $('#nextPeriod').textContent = fmt(nextPeriod);
+      $('#fertileWindow').textContent = `${fmt(fertileStart)} a ${fmt(fertileEnd)}`;
+      $('#ovulation').textContent = fmt(ovulation);
+
+      // tocar som de batimento cardíaco
+      const audio = $('#heartbeat');
+      audio.currentTime = 0;
+      audio.volume = 0.4;
+      audio.play();
+
+      $('#btnWhatsApp').onclick = ()=>sendWhatsApp({nextPeriod,fertileStart,fertileEnd,ovulation});
+    });
+
+    // gerar corações flutuando
+    const bg = document.getElementById('bgHearts');
+    function createHeart(){
+      const span = document.createElement('span');
+      span.textContent = '💗';
+      span.style.left = Math.random()*100+'vw';
+      span.style.animationDuration = 5 + Math.random()*5 + 's';
+      span.style.fontSize = 14 + Math.random()*20 + 'px';
+      bg.appendChild(span);
+      setTimeout(()=>span.remove(),10000);
+    }
+    setInterval(createHeart,500);
+  </script>
+</body>
+</html>
